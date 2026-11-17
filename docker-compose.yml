@@ -1,0 +1,70 @@
+# Runs the whole system: Postgres, the model API, and the web app.
+#   docker compose up --build        then open http://localhost:8080
+# Optional settings can go in a .env file next to this one, for example:
+#   ADMIN_EMAILS=you@example.com
+name: creditrisk
+
+services:
+  db:
+    image: postgres:16-alpine
+    restart: unless-stopped
+    environment:
+      POSTGRES_USER: creditrisk
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:-creditrisk}
+      POSTGRES_DB: creditrisk
+    volumes:
+      - pgdata:/var/lib/postgresql/data
+    # Only reachable from this computer. Port 5433 avoids clashing with a Postgres you installed yourself.
+    ports:
+      - "127.0.0.1:${DB_PORT:-5433}:5432"
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U creditrisk -d creditrisk"]
+      interval: 5s
+      timeout: 3s
+      retries: 12
+
+  ml:
+    build:
+      context: .
+      dockerfile: analysis/Dockerfile
+    restart: unless-stopped
+    environment:
+      ML_API_KEY: ${ML_API_KEY:-}
+      KES_PER_MODEL_UNIT: ${KES_PER_MODEL_UNIT:-40}
+      BASE_INTEREST_RATE: ${BASE_INTEREST_RATE:-11.0}
+      MAX_LOAN_PERCENT_INCOME: ${MAX_LOAN_PERCENT_INCOME:-0.40}
+    healthcheck:
+      test: ["CMD", "python", "-c", "import urllib.request; urllib.request.urlopen('http://127.0.0.1:8100/docs')"]
+      interval: 10s
+      timeout: 5s
+      retries: 6
+      start_period: 30s
+
+  web:
+    build: .
+    restart: unless-stopped
+    depends_on:
+      db:
+        condition: service_healthy
+      ml:
+        condition: service_healthy
+    ports:
+      - "${WEB_PORT:-8080}:8080"
+    environment:
+      PORT: "8080"
+      BASE_URL: ${BASE_URL:-http://localhost:8080}
+      DATABASE_URL: postgres://creditrisk:${POSTGRES_PASSWORD:-creditrisk}@db:5432/creditrisk?sslmode=disable
+      ML_API_URL: http://ml:8100
+      ML_API_KEY: ${ML_API_KEY:-}
+      COOKIE_SECURE: ${COOKIE_SECURE:-false}
+      ADMIN_EMAILS: ${ADMIN_EMAILS:-}
+      COMPANY_NAME: ${COMPANY_NAME:-Kopa Check}
+      PAYMENT_INSTRUCTIONS: ${PAYMENT_INSTRUCTIONS:-}
+      SMTP_HOST: ${SMTP_HOST:-}
+      SMTP_PORT: ${SMTP_PORT:-587}
+      SMTP_USER: ${SMTP_USER:-}
+      SMTP_PASS: ${SMTP_PASS:-}
+      SMTP_FROM: ${SMTP_FROM:-no-reply@example.com}
+
+volumes:
+  pgdata:

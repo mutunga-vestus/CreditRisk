@@ -1,0 +1,190 @@
+{{define "content"}}
+{{template "nav" .}}
+<main class="mx-auto max-w-4xl px-4 py-10">
+  <h1 class="font-display text-3xl font-extrabold">Hello, {{.User.FullName}}</h1>
+  <div class="mt-6">{{template "alerts" .}}</div>
+
+  {{if not .Profile}}
+  <section class="rounded-2xl border border-ink/15 bg-white p-8">
+    <h2 class="font-display text-xl font-extrabold">Add your details to get started</h2>
+    <p class="mt-2 max-w-prose text-ink/70">We need your income, repayments and the amount you want to borrow before we can score your application.</p>
+    <a href="/profile" class="btn mt-5">Add my details</a>
+  </section>
+  {{else}}
+  {{with .Invoice}}
+  <section class="mb-6 flex flex-wrap items-center justify-between gap-4 rounded-2xl border border-ink/15 bg-white p-5" aria-labelledby="invoice-summary-title">
+    <div>
+      <p class="text-sm font-semibold text-ink/60">Loan invoice</p>
+      <h2 id="invoice-summary-title" class="font-display text-xl font-extrabold">{{.Number}} <span class="ml-1 text-sm font-semibold text-ink/60">{{if .Repaid}}Fully repaid{{else}}{{.StatusLabel}}{{end}}</span></h2>
+      <p class="mt-1 text-sm text-ink/70">{{kes .PrincipalKES}} &middot; {{months .Months}} &middot; {{kes .PaidKES}} paid &middot; {{kes .OutstandingKES}} outstanding</p>
+    </div>
+    <div class="flex flex-wrap gap-3">
+      <a href="/invoice" class="btn">View invoice</a>
+      <a href="/statement/{{.ID}}" download class="inline-flex items-center justify-center rounded-lg border border-ink px-5 py-2.5 font-semibold text-ink hover:bg-ink/5 focus:outline-none focus:ring-2 focus:ring-sun focus:ring-offset-2">Download PDF</a>
+    </div>
+  </section>
+  {{end}}
+  <section class="grid gap-6 md:grid-cols-3">
+    {{if and .Application (eq .Application.Status "pending")}}
+    <div class="rounded-2xl bg-leaf p-8 text-white md:col-span-2" role="status">
+      <p class="text-sm font-semibold text-white/80">Application received</p>
+      <p class="mt-2 font-display text-3xl font-extrabold leading-tight">Your application has been received, please wait as we process the application.</p>
+      <dl class="mt-8 grid grid-cols-2 gap-5 border-t border-white/25 pt-5 text-sm sm:grid-cols-4">
+        <div><dt class="text-white/70">Amount applied for</dt><dd class="mt-0.5 font-semibold">{{kes .Application.AmountKES}}</dd></div>
+        <div><dt class="text-white/70">Reference</dt><dd class="mt-0.5 font-semibold">{{ref .Application.ID}}</dd></div>
+        <div><dt class="text-white/70">Submitted</dt><dd class="mt-0.5 font-semibold">{{date .Application.CreatedAt}}</dd></div>
+        <div><dt class="text-white/70">Status</dt><dd class="mt-0.5 font-semibold">Pending review</dd></div>
+      </dl>
+      {{if .Application.TermMonths}}
+      <dl class="mt-5 grid grid-cols-2 gap-5 border-t border-white/25 pt-5 text-sm sm:grid-cols-4">
+        <div><dt class="text-white/70">Interest rate</dt><dd class="mt-0.5 font-semibold">{{printf "%.1f" .Application.AnnualRatePct}}% a year</dd></div>
+        <div><dt class="text-white/70">Repay over</dt><dd class="mt-0.5 font-semibold">{{months .Application.TermMonths}}</dd></div>
+        <div><dt class="text-white/70">Monthly payment</dt><dd class="mt-0.5 font-semibold">{{kes .Application.MonthlyInstallmentKES}}</dd></div>
+        <div><dt class="text-white/70">Total to repay</dt><dd class="mt-0.5 font-semibold">{{kes .Application.TotalRepayableKES}}</dd></div>
+      </dl>
+      {{end}}
+    </div>
+    {{else if .LoanCard}}
+    <div class="rounded-2xl bg-leaf p-8 text-white md:col-span-2" role="status">
+      {{with .Invoice}}
+      {{if not .Disbursed}}
+      <p class="text-sm font-semibold text-white/80">Loan approved</p>
+      <p class="mt-2 font-display text-3xl font-extrabold leading-tight">Your loan of {{kes .PrincipalKES}} has been approved. We will pay it out soon.</p>
+      <p class="mt-4 text-white/85">Your repayment dates start from the day it is paid out. Reference {{.LoanRef}}.</p>
+      {{else if .Repaid}}
+      <p class="text-sm font-semibold text-white/80">Loan repaid</p>
+      <p class="mt-2 font-display text-3xl font-extrabold leading-tight">Your loan is fully repaid. Thank you.</p>
+      <p class="mt-4 text-white/85">You paid {{kes .PaidKES}} in total. Your invoice below is a record of every payment.</p>
+      <form method="post" action="/assess" class="mt-6">
+        <button class="inline-flex items-center rounded-lg bg-sun px-5 py-2.5 font-semibold text-ink hover:brightness-95 focus:outline-none focus:ring-2 focus:ring-white">Check what I can borrow next</button>
+      </form>
+      {{else}}
+      <p class="text-sm font-semibold text-white/80">Your loan is active</p>
+      <p class="mt-1 font-display text-5xl font-extrabold">{{kes .OutstandingKES}}</p>
+      <p class="mt-1 text-white/85">still to repay, out of {{kes .TotalRepayableKES}}</p>
+      <div class="mt-5 h-2 rounded-full bg-white/25" role="progressbar" aria-label="Repaid so far" aria-valuemin="0" aria-valuemax="100" aria-valuenow="{{.ProgressPct}}">
+        <div class="h-2 rounded-full bg-sun" style="width: {{.ProgressPct}}%"></div>
+      </div>
+      <p class="mt-2 text-xs text-white/80">{{.ProgressPct}}% repaid ({{kes .PaidKES}} paid)</p>
+      {{if gt .OverdueKES 0.0}}<p class="mt-4 rounded-lg bg-brick px-3 py-2 text-sm font-semibold">You have {{kes .OverdueKES}} overdue. Please pay as soon as you can.</p>{{end}}
+      {{with .NextDue}}
+      <dl class="mt-6 grid grid-cols-2 gap-5 border-t border-white/25 pt-5 text-sm">
+        <div><dt class="text-white/70">Next payment</dt><dd class="mt-0.5 font-semibold">{{kes .AmountKES}}</dd></div>
+        <div><dt class="text-white/70">{{if .Overdue}}Was due{{else}}Due on{{end}}</dt><dd class="mt-0.5 font-semibold">{{day .Due}}</dd></div>
+      </dl>
+      {{end}}
+      {{if $.PaymentInstructions}}<p class="mt-5 rounded-lg bg-white/10 px-3 py-2 text-sm"><span class="font-semibold">How to pay:</span> {{$.PaymentInstructions}}</p>{{end}}
+      <p class="mt-3 text-xs text-white/75">Payments appear here after we record them, which can take a little while.</p>
+      {{end}}
+      {{end}}
+    </div>
+    {{else}}
+    <div class="rounded-2xl p-8 md:col-span-2 {{if and .Assessment .Assessment.Approved}}bg-leaf text-white{{else if .Assessment}}bg-brick text-white{{else}}border border-ink/15 bg-white{{end}}">
+      {{if .Assessment}}
+        {{if .Assessment.Approved}}
+        <p class="text-sm text-white/80">You qualify for up to</p>
+        <p class="mt-1 font-display text-5xl font-extrabold">{{kes .Assessment.AmountKES}}</p>
+        <p class="mt-3 text-white/85">Repayment confidence: {{percent .Assessment.Probability}}</p>
+
+        <form method="post" action="/apply" class="mt-6 rounded-xl bg-white/10 p-4">
+          <input type="hidden" name="assessment_id" value="{{.Assessment.ID}}">
+          <label for="amount" class="text-sm font-medium text-white">Amount to apply for (KES)</label>
+          <div class="mt-2 flex flex-wrap items-center gap-3">
+            <input id="amount" name="amount" inputmode="numeric" required autocomplete="off" value="{{printf "%.0f" .Assessment.AmountKES}}" class="input max-w-[12rem]">
+            <button class="inline-flex items-center rounded-lg bg-sun px-5 py-2.5 font-semibold text-ink hover:brightness-95 focus:outline-none focus:ring-2 focus:ring-white">Apply for this loan</button>
+          </div>
+          <p class="mt-2 text-xs text-white/75">You can apply for up to {{kes .Assessment.AmountKES}}.</p>
+
+          <div id="terms" class="mt-4 border-t border-white/25 pt-4" aria-live="polite">
+            <p id="terms-error" class="text-sm font-medium {{if .Terms}}hidden{{end}}">{{with .TermsError}}{{.}}{{end}}</p>
+            <div id="terms-figures" class="{{if not .Terms}}hidden{{end}}">
+              <dl class="grid grid-cols-2 gap-4 text-sm sm:grid-cols-4">
+                <div><dt class="text-white/75">Interest rate</dt><dd class="mt-0.5 font-semibold"><span id="t-rate">{{with .Terms}}{{printf "%.1f" .AnnualRatePct}}{{end}}</span>% a year</dd></div>
+                <div><dt class="text-white/75">Repay over</dt><dd id="t-months" class="mt-0.5 font-semibold">{{with .Terms}}{{months .Months}}{{end}}</dd></div>
+                <div><dt class="text-white/75">Monthly payment</dt><dd id="t-installment" class="mt-0.5 font-semibold">{{with .Terms}}{{kes .MonthlyInstallmentKES}}{{end}}</dd></div>
+                <div><dt class="text-white/75">Total to repay</dt><dd id="t-total" class="mt-0.5 font-semibold">{{with .Terms}}{{kes .TotalRepayableKES}}{{end}}</dd></div>
+              </dl>
+              <p class="mt-3 text-xs text-white/75">That total is the amount you borrow plus <span id="t-interest">{{with .Terms}}{{kes .TotalInterestKES}}{{end}}</span> interest. Interest is charged only on the balance you still owe.</p>
+            </div>
+          </div>
+        </form>
+        {{else}}
+        <p class="font-display text-3xl font-extrabold">Not approved right now</p>
+        <p class="mt-3 max-w-prose text-white/85">Repayment confidence was {{percent .Assessment.Probability}}. Update your details if they have changed, or try again after clearing existing debt.</p>
+        {{end}}
+        <p class="mt-6 text-xs text-white/70">Assessed {{date .Assessment.CreatedAt}}</p>
+      {{else}}
+        <h2 class="font-display text-xl font-extrabold">Ready to check</h2>
+        <p class="mt-2 text-ink/70">Your details are saved. Run your first assessment.</p>
+      {{end}}
+      <form method="post" action="/assess" class="mt-6">
+        <button class="inline-flex items-center rounded-lg {{if and .Assessment .Assessment.Approved}}border border-white/50 text-white hover:bg-white/10{{else if .Assessment}}bg-sun text-ink hover:brightness-95{{else}}bg-ink text-white hover:bg-ink/90{{end}} px-5 py-2.5 font-semibold focus:outline-none focus:ring-2 focus:ring-sun">{{if .Assessment}}Run assessment again{{else}}Run assessment{{end}}</button>
+      </form>
+    </div>
+    {{end}}
+    <aside class="rounded-2xl border border-ink/15 bg-white p-6">
+      <h2 class="font-display text-lg font-extrabold">Your request</h2>
+      <dl class="mt-4 space-y-3 text-sm">
+        <div><dt class="text-ink/60">Amount wanted</dt><dd class="font-semibold">{{kes .Profile.RequestedAmountKES}}</dd></div>
+        <div><dt class="text-ink/60">Purpose</dt><dd class="font-semibold">{{intent .Profile.LoanIntent}}</dd></div>
+        <div><dt class="text-ink/60">Monthly income</dt><dd class="font-semibold">{{kes (monthly .Profile.AnnualIncomeKES)}}</dd></div>
+      </dl>
+      <a href="/profile" class="mt-5 inline-block text-sm font-semibold underline">Edit my details</a>
+    </aside>
+  </section>
+
+  {{if or (and .Application (eq .Application.Status "pending")) .LoanCard}}
+  <section class="mt-6 rounded-2xl border border-ink/15 bg-white p-6" aria-labelledby="elig-title">
+    <h2 id="elig-title" class="font-display text-lg font-extrabold">Eligibility check</h2>
+    {{if .Assessment}}
+      {{if .Assessment.Approved}}
+      <p class="mt-2">Your latest check: you qualify for up to <strong>{{kes .Assessment.AmountKES}}</strong> (repayment confidence {{percent .Assessment.Probability}}).</p>
+      {{else}}
+      <p class="mt-2">Your latest check: not approved right now (repayment confidence {{percent .Assessment.Probability}}).</p>
+      {{end}}
+      <p class="mt-1 text-xs text-ink/60">Assessed {{date .Assessment.CreatedAt}}</p>
+    {{else}}
+    <p class="mt-2 text-ink/70">Run a check any time to see what you could borrow.</p>
+    {{end}}
+    <p class="mt-3 text-sm text-ink/70">You can run the check again whenever you like, for example after updating your details. It does not change your current application or loan.</p>
+    <form method="post" action="/assess" class="mt-4">
+      <button class="btn">{{if .Assessment}}Run assessment again{{else}}Run assessment{{end}}</button>
+    </form>
+  </section>
+  {{end}}
+  {{end}}
+</main>
+<script>
+(function () {
+  var input = document.getElementById('amount');
+  if (!input) { return; }
+  var timer, latest = 0;
+  var figures = document.getElementById('terms-figures');
+  var errorBox = document.getElementById('terms-error');
+  function money(n) { return 'KES ' + Math.round(n).toLocaleString('en-US'); }
+  function show(d) {
+    if (d.error) {
+      errorBox.textContent = d.error;
+      errorBox.classList.remove('hidden');
+      figures.classList.add('hidden');
+      return;
+    }
+    document.getElementById('t-rate').textContent = d.annual_rate_pct.toFixed(1);
+    document.getElementById('t-months').textContent = d.months + (d.months === 1 ? ' month' : ' months');
+    document.getElementById('t-installment').textContent = money(d.monthly_installment);
+    document.getElementById('t-total').textContent = money(d.total_repayable);
+    document.getElementById('t-interest').textContent = money(d.total_interest);
+    errorBox.classList.add('hidden');
+    figures.classList.remove('hidden');
+  }
+  function load() {
+    var n = ++latest;
+    fetch('/terms?amount=' + encodeURIComponent(input.value), { headers: { 'Accept': 'application/json' } })
+      .then(function (r) { return r.json(); })
+      .then(function (d) { if (n === latest) { show(d); } })
+      .catch(function () {});
+  }
+  input.addEventListener('input', function () { clearTimeout(timer); timer = setTimeout(load, 250); });
+})();
+</script>
+{{end}}

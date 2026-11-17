@@ -1,0 +1,16 @@
+{{define "content"}}{{template "authshell" .}}{{end}}
+{{define "authform"}}
+<h1 class="font-display text-3xl font-extrabold">Create your account</h1>
+<div class="mt-6">{{template "alerts" .}}</div>
+<form method="post" action="/register" class="space-y-4">
+  <div><label class="label" for="full_name">Full name</label>
+    <input class="input" id="full_name" name="full_name" autocomplete="name" required value="{{.Name}}"></div>
+  <div><label class="label" for="email">Email</label>
+    <input class="input" id="email" name="email" type="email" autocomplete="email" required></div>
+  <div><label class="label" for="password">Password</label>
+    <input class="input" id="password" name="password" type="password" minlength="8" maxlength="72" autocomplete="new-password" required>
+    <p class="mt-1 text-xs text-ink/60">At least 8 characters.</p></div>
+  <button class="btn w-full">Create account</button>
+</form>
+<p class="mt-5 text-sm">Already registered? <a class="font-semibold underline" href="/login">Log in</a></p>
+{{end}}

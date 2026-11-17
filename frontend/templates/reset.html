@@ -1,0 +1,12 @@
+{{define "content"}}{{template "authshell" .}}{{end}}
+{{define "authform"}}
+<h1 class="font-display text-3xl font-extrabold">Set a new password</h1>
+<div class="mt-6">{{template "alerts" .}}</div>
+<form method="post" action="/reset" class="space-y-4">
+  <input type="hidden" name="token" value="{{.Token}}">
+  <div><label class="label" for="password">New password</label>
+    <input class="input" id="password" name="password" type="password" minlength="8" maxlength="72" autocomplete="new-password" required></div>
+  <button class="btn w-full">Save new password</button>
+</form>
+<p class="mt-5 text-sm"><a class="underline" href="/forgot">Request a new link</a></p>
+{{end}}

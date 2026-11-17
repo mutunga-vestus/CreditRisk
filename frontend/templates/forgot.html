@@ -1,0 +1,15 @@
+{{define "content"}}{{template "authshell" .}}{{end}}
+{{define "authform"}}
+<h1 class="font-display text-3xl font-extrabold">Reset your password</h1>
+{{if .Sent}}
+<p class="mt-6 rounded-lg border border-leaf/40 bg-leaf/10 px-3 py-3 text-sm text-leaf">If an account exists for that email, we have sent a reset link. It expires in 1 hour.</p>
+{{else}}
+<p class="mt-2 text-sm text-ink/70">Enter your email and we will send you a link to set a new password.</p>
+<form method="post" action="/forgot" class="mt-6 space-y-4">
+  <div><label class="label" for="email">Email</label>
+    <input class="input" id="email" name="email" type="email" autocomplete="email" required></div>
+  <button class="btn w-full">Send reset link</button>
+</form>
+{{end}}
+<p class="mt-5 text-sm"><a class="underline" href="/login">Back to log in</a></p>
+{{end}}

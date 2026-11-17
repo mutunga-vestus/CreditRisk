@@ -1,0 +1,41 @@
+{{define "content"}}
+{{template "nav" .}}
+<main class="mx-auto max-w-5xl px-4 py-10">
+  <h1 class="font-display text-3xl font-extrabold">Loans</h1>
+  <p class="mt-2 text-ink/70">Approve applications, mark loans as paid out, and record the payments customers make.</p>
+
+  {{if .Loans}}
+  <div class="mt-6 overflow-x-auto rounded-xl border border-ink/15 bg-white">
+    <table class="min-w-full text-sm">
+      <caption class="sr-only">All loan applications, newest first</caption>
+      <thead class="bg-ink text-left text-white">
+        <tr>
+          <th scope="col" class="px-3 py-2 font-semibold">Loan</th>
+          <th scope="col" class="px-3 py-2 font-semibold">Customer</th>
+          <th scope="col" class="px-3 py-2 text-right font-semibold">Amount</th>
+          <th scope="col" class="px-3 py-2 font-semibold">Status</th>
+          <th scope="col" class="px-3 py-2 text-right font-semibold">Paid</th>
+          <th scope="col" class="px-3 py-2 text-right font-semibold">Outstanding</th>
+          <th scope="col" class="px-3 py-2 font-semibold">Applied</th>
+        </tr>
+      </thead>
+      <tbody class="divide-y divide-ink/10">
+        {{range .Loans}}
+        <tr class="odd:bg-white even:bg-paper">
+          <td class="whitespace-nowrap px-3 py-2"><a class="font-semibold underline" href="/admin/loans/{{.ID}}">{{ref .ID}}</a></td>
+          <td class="px-3 py-2">{{.FullName}}<br><span class="text-xs text-ink/60">{{.Email}}</span></td>
+          <td class="whitespace-nowrap px-3 py-2 text-right">{{kes .AmountKES}}</td>
+          <td class="px-3 py-2 capitalize">{{.Status}}</td>
+          <td class="whitespace-nowrap px-3 py-2 text-right">{{if .Active}}{{kes .PaidKES}}{{else}}&ndash;{{end}}</td>
+          <td class="whitespace-nowrap px-3 py-2 text-right">{{if .Active}}{{kes .OutstandingKES}}{{else}}&ndash;{{end}}</td>
+          <td class="whitespace-nowrap px-3 py-2">{{day .CreatedAt}}</td>
+        </tr>
+        {{end}}
+      </tbody>
+    </table>
+  </div>
+  {{else}}
+  <p class="mt-6 rounded-xl border border-ink/15 bg-white p-6 text-ink/70">No loan applications yet.</p>
+  {{end}}
+</main>
+{{end}}

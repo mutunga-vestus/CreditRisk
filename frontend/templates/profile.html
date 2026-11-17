@@ -1,0 +1,58 @@
+{{define "content"}}
+{{template "nav" .}}
+<main class="mx-auto max-w-3xl px-4 py-10">
+  <h1 class="font-display text-3xl font-extrabold">Your details</h1>
+  <p class="mt-2 max-w-prose text-ink/70">All amounts are in Kenyan shillings (KES). We use these details only to score your loan request.</p>
+  <div class="mt-6">{{template "alerts" .}}</div>
+
+  <form method="post" action="/profile" class="space-y-8">
+    <fieldset class="grid gap-4 sm:grid-cols-2">
+      <legend class="mb-3 font-display text-lg font-extrabold">About you</legend>
+      <div><label class="label" for="age">Age</label>
+        <input class="input" id="age" name="age" type="number" min="18" max="100" required value="{{if .Profile.Age}}{{.Profile.Age}}{{end}}"></div>
+      <div><label class="label" for="home_ownership">Where you live</label>
+        <select class="input" id="home_ownership" name="home_ownership" required>
+          <option value="">Select</option>
+          <option value="RENT" {{if eq .Profile.HomeOwnership "RENT"}}selected{{end}}>I rent</option>
+          <option value="OWN" {{if eq .Profile.HomeOwnership "OWN"}}selected{{end}}>I own my home</option>
+          <option value="MORTGAGE" {{if eq .Profile.HomeOwnership "MORTGAGE"}}selected{{end}}>I own it with a mortgage</option>
+          <option value="OTHER" {{if eq .Profile.HomeOwnership "OTHER"}}selected{{end}}>Other</option>
+        </select></div>
+      <div><label class="label" for="monthly_income">Monthly income (KES)</label>
+        <input class="input" id="monthly_income" name="monthly_income" type="number" step="1" min="1" required value="{{if .Profile.AnnualIncomeKES}}{{printf "%.0f" (monthly .Profile.AnnualIncomeKES)}}{{end}}"></div>
+      <div><label class="label" for="employment_years">Years in current work</label>
+        <input class="input" id="employment_years" name="employment_years" type="number" step="0.5" min="0" max="60" required value="{{if .Profile.EmploymentYears}}{{.Profile.EmploymentYears}}{{end}}"></div>
+    </fieldset>
+
+    <fieldset class="grid gap-4 sm:grid-cols-2">
+      <legend class="mb-3 font-display text-lg font-extrabold">Borrowing history</legend>
+      <div><label class="label" for="credit_history_years">Years you have had credit</label>
+        <input class="input" id="credit_history_years" name="credit_history_years" type="number" min="0" max="60" required value="{{if .Profile.CreditHistoryYears}}{{.Profile.CreditHistoryYears}}{{end}}"></div>
+      <div><label class="label" for="default_on_file">Ever defaulted on a loan?</label>
+        <select class="input" id="default_on_file" name="default_on_file" required>
+          <option value="">Select</option>
+          <option value="N" {{if eq .Profile.DefaultOnFile "N"}}selected{{end}}>No</option>
+          <option value="Y" {{if eq .Profile.DefaultOnFile "Y"}}selected{{end}}>Yes</option>
+        </select></div>
+    </fieldset>
+
+    <fieldset class="grid gap-4 sm:grid-cols-2">
+      <legend class="mb-3 font-display text-lg font-extrabold">The loan you want</legend>
+      <div><label class="label" for="requested_amount">Amount (KES)</label>
+        <input class="input" id="requested_amount" name="requested_amount" type="number" step="1" min="1" required value="{{if .Profile.RequestedAmountKES}}{{printf "%.0f" .Profile.RequestedAmountKES}}{{end}}"></div>
+      <div><label class="label" for="loan_intent">What is it for?</label>
+        <select class="input" id="loan_intent" name="loan_intent" required>
+          <option value="">Select</option>
+          <option value="PERSONAL" {{if eq .Profile.LoanIntent "PERSONAL"}}selected{{end}}>Personal</option>
+          <option value="EDUCATION" {{if eq .Profile.LoanIntent "EDUCATION"}}selected{{end}}>Education</option>
+          <option value="MEDICAL" {{if eq .Profile.LoanIntent "MEDICAL"}}selected{{end}}>Medical</option>
+          <option value="VENTURE" {{if eq .Profile.LoanIntent "VENTURE"}}selected{{end}}>Business</option>
+          <option value="HOMEIMPROVEMENT" {{if eq .Profile.LoanIntent "HOMEIMPROVEMENT"}}selected{{end}}>Home improvement</option>
+          <option value="DEBTCONSOLIDATION" {{if eq .Profile.LoanIntent "DEBTCONSOLIDATION"}}selected{{end}}>Debt consolidation</option>
+        </select></div>
+    </fieldset>
+
+    <button class="btn">Save details</button>
+  </form>
+</main>
+{{end}}
