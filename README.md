@@ -203,7 +203,6 @@ checks. The Python service and the handlers' HTTP paths don't have tests.
   If you retrain, pin whatever version you trained with.
 
 ## Retraining
-
 Open `analysis/analytics.ipynb`, run it top to bottom, and it overwrites `xgb_model.joblib` and `best_threshold` in
 `analysis/`. Rebuild the `ml` image afterwards. If you change the feature set, `COLUMNS` and `Applicant` in
 `analysis/serve.py` need to match.
